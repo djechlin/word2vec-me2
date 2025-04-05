@@ -10,7 +10,6 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -18,19 +17,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Import functions from library modules
 from lib.amazon_data import convert_amazon_reviews_to_corpus
 from lib.word2vec import (
+    evaluate_model,
+    process_corpus,
     tokenize_with_nltk,
     tokenize_with_tiktoken,
-    process_corpus,
     train_word2vec,
-    evaluate_model
 )
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s : %(levelname)s : %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s : %(levelname)s : %(message)s")
 logger = logging.getLogger(__name__)
+
 
 def run_amazon_word2vec_pipeline(
     category: str,
@@ -62,8 +59,8 @@ def run_amazon_word2vec_pipeline(
     """
     # Set up paths
     project_root = Path(__file__).parent.parent
-    input_path = project_root / 'data' / f'{category}_reviews.arrow'
-    corpus_path = project_root / 'data' / f'{category.lower()}_corpus.txt'
+    input_path = project_root / "data" / f"{category}_reviews.arrow"
+    corpus_path = project_root / "data" / f"{category.lower()}_corpus.txt"
     output_prefix = f"{output_dir}/{category.lower()}_word2vec"
 
     # Create output directory
@@ -73,26 +70,21 @@ def run_amazon_word2vec_pipeline(
     logger.info(f"Step 1: Converting Amazon {category} reviews to text corpus...")
     try:
         convert_amazon_reviews_to_corpus(
-            input_path=str(input_path),
-            output_path=str(corpus_path),
-            max_reviews=max_reviews
+            input_path=str(input_path), output_path=str(corpus_path), max_reviews=max_reviews
         )
     except Exception as e:
-        logger.error(f"Data preparation failed: {str(e)}")
+        logger.error(f"Data preparation failed: {e!s}")
         return 1
 
     # Step 2: Process and train Word2Vec model
     logger.info(f"Step 2: Training Word2Vec model with {tokenizer_name} tokenizer...")
 
     # Select tokenizer function
-    tokenizer = tokenize_with_nltk if tokenizer_name == 'nltk' else tokenize_with_tiktoken
+    tokenizer = tokenize_with_nltk if tokenizer_name == "nltk" else tokenize_with_tiktoken
 
     try:
         # Process corpus
-        tokenized_corpus = process_corpus(
-            corpus_path=str(corpus_path),
-            tokenizer=tokenizer
-        )
+        tokenized_corpus = process_corpus(corpus_path=str(corpus_path), tokenizer=tokenizer)
 
         if not tokenized_corpus:
             logger.error("No valid articles found in corpus. Exiting.")
@@ -105,16 +97,16 @@ def run_amazon_word2vec_pipeline(
             window=window,
             min_count=min_count,
             sg=sg,
-            epochs=epochs
+            epochs=epochs,
         )
 
         # Basic evaluation
-        word_pairs: List[Tuple[str, str]] = [
-            ('man', 'woman'),
-            ('king', 'queen'),
-            ('computer', 'laptop'),
-            ('good', 'bad'),
-            ('cat', 'dog')
+        word_pairs: list[tuple[str, str]] = [
+            ("man", "woman"),
+            ("king", "queen"),
+            ("computer", "laptop"),
+            ("good", "bad"),
+            ("cat", "dog"),
         ]
         evaluate_model(model, word_pairs)
 
@@ -129,32 +121,54 @@ def run_amazon_word2vec_pipeline(
         logger.info(f"Word vectors saved to {vector_path}")
 
     except Exception as e:
-        logger.error(f"Word2Vec training failed: {str(e)}")
+        logger.error(f"Word2Vec training failed: {e!s}")
         return 1
 
     logger.info("Amazon Reviews Word2Vec pipeline completed successfully!")
     return 0
 
-def main():
+
+def main() -> int:
     parser = argparse.ArgumentParser(description="Run Amazon Reviews Word2Vec Pipeline")
-    parser.add_argument('--category', type=str, default='Books',
-                        help='Amazon category to process (e.g., Books, Electronics)')
-    parser.add_argument('--max_reviews', type=int, default=100000,
-                        help='Maximum number of reviews to include (default: 100000)')
-    parser.add_argument('--tokenizer', type=str, choices=['nltk', 'tiktoken'], default='nltk',
-                        help='Tokenizer to use: nltk or tiktoken')
-    parser.add_argument('--vector_size', type=int, default=100,
-                        help='Dimensionality of the word vectors')
-    parser.add_argument('--window', type=int, default=5,
-                        help='Maximum distance between current and predicted word')
-    parser.add_argument('--epochs', type=int, default=5,
-                        help='Number of training epochs')
-    parser.add_argument('--sg', type=int, default=1, choices=[0, 1],
-                        help='Training algorithm: 1 for skip-gram, 0 for CBOW')
-    parser.add_argument('--min_count', type=int, default=5,
-                        help='Minimum count of words to consider for training')
-    parser.add_argument('--output_dir', type=str, default='./models',
-                        help='Directory to save the output models')
+    parser.add_argument(
+        "--category",
+        type=str,
+        default="Books",
+        help="Amazon category to process (e.g., Books, Electronics)",
+    )
+    parser.add_argument(
+        "--max_reviews",
+        type=int,
+        default=100000,
+        help="Maximum number of reviews to include (default: 100000)",
+    )
+    parser.add_argument(
+        "--tokenizer",
+        type=str,
+        choices=["nltk", "tiktoken"],
+        default="nltk",
+        help="Tokenizer to use: nltk or tiktoken",
+    )
+    parser.add_argument(
+        "--vector_size", type=int, default=100, help="Dimensionality of the word vectors"
+    )
+    parser.add_argument(
+        "--window", type=int, default=5, help="Maximum distance between current and predicted word"
+    )
+    parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
+    parser.add_argument(
+        "--sg",
+        type=int,
+        default=1,
+        choices=[0, 1],
+        help="Training algorithm: 1 for skip-gram, 0 for CBOW",
+    )
+    parser.add_argument(
+        "--min_count", type=int, default=5, help="Minimum count of words to consider for training"
+    )
+    parser.add_argument(
+        "--output_dir", type=str, default="./models", help="Directory to save the output models"
+    )
 
     args = parser.parse_args()
 
@@ -167,8 +181,9 @@ def main():
         min_count=args.min_count,
         sg=args.sg,
         epochs=args.epochs,
-        output_dir=args.output_dir
+        output_dir=args.output_dir,
     )
+
 
 if __name__ == "__main__":
     sys.exit(main())

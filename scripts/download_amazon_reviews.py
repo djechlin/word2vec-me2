@@ -6,32 +6,31 @@ Usage:
     python download_amazon_reviews.py --category "Books" --output_dir "./data" --type "reviews"
 """
 
-import os
-import sys
 import argparse
 import logging
-from typing import Literal, Optional
+import os
+import sys
 from pathlib import Path
+from typing import Literal
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import from lib module
 from datasets import load_dataset
+
 from lib.amazon_data import CATEGORIES
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
 
 def download_amazon_reviews(
     category: str,
     data_type: Literal["reviews", "metadata"],
     output_dir: str,
-    sample_size: Optional[int] = None
+    sample_size: int | None = None,
 ) -> str:
     """
     Download Amazon Reviews dataset for a specific category.
@@ -64,16 +63,11 @@ def download_amazon_reviews(
         # Load dataset from Hugging Face
         if data_type == "metadata":
             dataset = load_dataset(
-                "McAuley-Lab/Amazon-Reviews-2023",
-                config,
-                split="full",
-                trust_remote_code=True
+                "McAuley-Lab/Amazon-Reviews-2023", config, split="full", trust_remote_code=True
             )
         else:
             dataset = load_dataset(
-                "McAuley-Lab/Amazon-Reviews-2023",
-                config,
-                trust_remote_code=True
+                "McAuley-Lab/Amazon-Reviews-2023", config, trust_remote_code=True
             )
 
         # Take a sample if requested
@@ -93,28 +87,42 @@ def download_amazon_reviews(
         return output_path
 
     except Exception as e:
-        logger.error(f"Error downloading dataset: {str(e)}")
+        logger.error(f"Error downloading dataset: {e!s}")
         raise
 
-def list_available_categories():
+
+def list_available_categories() -> None:
     """Print all available categories in the dataset."""
     logger.info("Available categories in Amazon Reviews 2023 dataset:")
     for category in CATEGORIES:
         print(f"- {category}")
 
-def main():
+
+def main() -> int:
     """Main function to parse arguments and download dataset."""
-    parser = argparse.ArgumentParser(description='Download Amazon Reviews 2023 dataset')
-    parser.add_argument('--category', type=str, default='Books',
-                        help='Category to download (e.g., Books, Electronics)')
-    parser.add_argument('--output_dir', type=str, default='./data',
-                        help='Directory to save the dataset')
-    parser.add_argument('--type', type=str, choices=['reviews', 'metadata'], default='reviews',
-                        help='Type of data to download (reviews or metadata)')
-    parser.add_argument('--sample', type=int, default=None,
-                        help='Number of samples to keep (for testing)')
-    parser.add_argument('--list_categories', action='store_true',
-                        help='List all available categories and exit')
+    parser = argparse.ArgumentParser(description="Download Amazon Reviews 2023 dataset")
+    parser.add_argument(
+        "--category",
+        type=str,
+        default="Books",
+        help="Category to download (e.g., Books, Electronics)",
+    )
+    parser.add_argument(
+        "--output_dir", type=str, default="./data", help="Directory to save the dataset"
+    )
+    parser.add_argument(
+        "--type",
+        type=str,
+        choices=["reviews", "metadata"],
+        default="reviews",
+        help="Type of data to download (reviews or metadata)",
+    )
+    parser.add_argument(
+        "--sample", type=int, default=None, help="Number of samples to keep (for testing)"
+    )
+    parser.add_argument(
+        "--list_categories", action="store_true", help="List all available categories and exit"
+    )
 
     args = parser.parse_args()
 
@@ -129,13 +137,14 @@ def main():
             category=args.category,
             data_type=args.type,
             output_dir=args.output_dir,
-            sample_size=args.sample
+            sample_size=args.sample,
         )
         logger.info(f"Successfully downloaded dataset to {output_path}")
         return 0
     except Exception as e:
-        logger.error(f"Failed to download dataset: {str(e)}")
+        logger.error(f"Failed to download dataset: {e!s}")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

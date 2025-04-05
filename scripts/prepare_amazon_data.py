@@ -17,22 +17,30 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from lib.amazon_data import convert_amazon_reviews_to_corpus
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s : %(levelname)s : %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s : %(levelname)s : %(message)s")
 logger = logging.getLogger(__name__)
 
-def main():
+
+def main() -> int:
     parser = argparse.ArgumentParser(description="Prepare Amazon Reviews for Word2Vec training")
-    parser.add_argument('--input', type=str, required=True,
-                        help='Path to the Arrow dataset directory (e.g., data/Books_reviews.arrow)')
-    parser.add_argument('--output', type=str, required=True,
-                        help='Path to save the text corpus (e.g., data/amazon_books_corpus.txt)')
-    parser.add_argument('--max_reviews', type=int, default=None,
-                        help='Maximum number of reviews to include')
-    parser.add_argument('--min_length', type=int, default=20,
-                        help='Minimum review length in characters')
+    parser.add_argument(
+        "--input",
+        type=str,
+        required=True,
+        help="Path to the Arrow dataset directory (e.g., data/Books_reviews.arrow)",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        required=True,
+        help="Path to save the text corpus (e.g., data/amazon_books_corpus.txt)",
+    )
+    parser.add_argument(
+        "--max_reviews", type=int, default=None, help="Maximum number of reviews to include"
+    )
+    parser.add_argument(
+        "--min_length", type=int, default=20, help="Minimum review length in characters"
+    )
 
     args = parser.parse_args()
 
@@ -45,13 +53,14 @@ def main():
             input_path=args.input,
             output_path=args.output,
             max_reviews=args.max_reviews,
-            min_length=args.min_length
+            min_length=args.min_length,
         )
         logger.info(f"Text corpus successfully created at {args.output}")
         return 0
     except Exception as e:
-        logger.error(f"Failed to prepare dataset: {str(e)}")
+        logger.error(f"Failed to prepare dataset: {e!s}")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())
