@@ -7,5 +7,5 @@ All Claude modes:
 Claude agent mode:
 
 - After every change create a git commit whose commit message begins with "[Claude]".
-- Before committing, run `ruff check` and `ruff format` to ensure code quality.
+- Git pre-commit hook will automatically run `ruff check` and `ruff format` to ensure code quality. The hook will block commits that don't pass linting.
 
