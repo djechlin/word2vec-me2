@@ -1,15 +1,24 @@
 #!/usr/bin/env python3
 """
-Script to download and manage Amazon Reviews 2023 dataset from Hugging Face.
+CLI script to download Amazon Reviews 2023 dataset from Hugging Face.
+
 Usage:
     python download_amazon_reviews.py --category "Books" --output_dir "./data" --type "reviews"
 """
 
 import os
+import sys
 import argparse
 import logging
 from typing import Literal, Optional
+from pathlib import Path
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Import from lib module
 from datasets import load_dataset
+from lib.amazon_data import CATEGORIES
 
 # Configure logging
 logging.basicConfig(
@@ -17,17 +26,6 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
-# Available categories in the dataset
-CATEGORIES = [
-    "All_Beauty", "Appliances", "Arts_Crafts_and_Sewing", "Automotive", "Books",
-    "CDs_and_Vinyl", "Cell_Phones_and_Accessories", "Clothing_Shoes_and_Jewelry",
-    "Digital_Music", "Electronics", "Gift_Cards", "Grocery_and_Gourmet_Food",
-    "Home_and_Kitchen", "Industrial_and_Scientific", "Kindle_Store", "Luxury_Beauty",
-    "Magazine_Subscriptions", "Movies_and_TV", "Musical_Instruments", "Office_Products",
-    "Patio_Lawn_and_Garden", "Pet_Supplies", "Prime_Pantry", "Software", "Sports_and_Outdoors",
-    "Tools_and_Home_Improvement", "Toys_and_Games", "Video_Games"
-]
 
 def download_amazon_reviews(
     category: str,
@@ -123,7 +121,7 @@ def main():
     # List categories if requested
     if args.list_categories:
         list_available_categories()
-        return
+        return 0
 
     # Download the dataset
     try:
@@ -134,11 +132,10 @@ def main():
             sample_size=args.sample
         )
         logger.info(f"Successfully downloaded dataset to {output_path}")
+        return 0
     except Exception as e:
         logger.error(f"Failed to download dataset: {str(e)}")
         return 1
 
-    return 0
-
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
