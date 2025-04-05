@@ -20,11 +20,37 @@ nltk.download('punkt', quiet=True)
 logger = logging.getLogger(__name__)
 
 def tokenize_with_nltk(text: str) -> List[str]:
-    """Tokenize text using NLTK's word_tokenize."""
+    """
+    Tokenizes text into words using NLTK's word_tokenize function.
+    
+    Processes the input text by converting to lowercase and splitting into
+    linguistic tokens (words, punctuation) using natural language rules.
+    This produces word-based tokens suitable for traditional word2vec training.
+    
+    Args:
+        text: Raw text string to tokenize
+        
+    Returns:
+        List of string tokens representing words and punctuation
+    """
     return word_tokenize(text.lower())
 
 def tokenize_with_tiktoken(text: str, model_name: str = "cl100k_base") -> List[str]:
-    """Tokenize text using tiktoken."""
+    """
+    Tokenizes text using OpenAI's tiktoken library and converts to string tokens.
+    
+    Processes text with tiktoken's BPE (byte pair encoding) tokenizer, 
+    converting to lowercase first. The integer token IDs are then converted 
+    to strings to make them compatible with word2vec's string-based vocabulary.
+    This provides subword tokenization that can capture meaningful fragments.
+    
+    Args:
+        text: Raw text string to tokenize
+        model_name: Name of the tiktoken encoding model to use (default: cl100k_base)
+        
+    Returns:
+        List of string tokens (converted from tiktoken's integer IDs)
+    """
     encoding = tiktoken.get_encoding(model_name)
     token_integers = encoding.encode(text.lower())
     # Convert back to strings for word2vec
@@ -35,7 +61,23 @@ def process_corpus(
     tokenizer: Callable,
     max_articles: Optional[int] = None
 ) -> List[List[str]]:
-    """Process a corpus file into tokenized sentences."""
+    """
+    Processes a text corpus file into a list of tokenized documents.
+    
+    Reads a corpus file where documents are separated by blank lines,
+    tokenizes each document using the provided tokenizer function,
+    and returns a nested list structure suitable for Word2Vec training.
+    Respects document boundaries to ensure that training contexts don't
+    cross between unrelated texts.
+    
+    Args:
+        corpus_path: Path to the corpus text file
+        tokenizer: Function that converts a text string into a list of tokens
+        max_articles: Optional limit on the number of documents to process
+        
+    Returns:
+        List of tokenized documents, where each document is a list of tokens
+    """
     articles = []
     article_count = 0
 
@@ -80,7 +122,27 @@ def train_word2vec(
     sg: int = 1,  # 1 for skip-gram, 0 for CBOW
     epochs: int = 5
 ) -> Word2Vec:
-    """Train a Word2Vec model on the tokenized corpus."""
+    """
+    Trains a Word2Vec model on a tokenized corpus of documents.
+    
+    Creates and trains a gensim Word2Vec model using the provided parameters.
+    Automatically determines the optimal number of worker threads based on
+    available CPU cores if not specified. Logs training progress and model
+    statistics. The resulting model captures semantic relationships between
+    tokens in the training corpus.
+    
+    Args:
+        tokenized_corpus: List of documents, where each document is a list of tokens
+        vector_size: Dimensionality of the word vectors (default: 100)
+        window: Maximum distance between target and context words (default: 5)
+        min_count: Ignores tokens with total frequency lower than this (default: 5)
+        workers: Number of CPU threads to use (default: all available cores)
+        sg: Training algorithm: 1 for skip-gram, 0 for CBOW (default: 1)
+        epochs: Number of training passes over the corpus (default: 5)
+        
+    Returns:
+        Trained Word2Vec model with word vectors and vocabulary
+    """
     if workers is None:
         workers = multiprocessing.cpu_count()
 
@@ -106,14 +168,22 @@ def train_word2vec(
 
 def evaluate_model(model: Word2Vec, word_pairs: List[Tuple[str, str]]) -> Dict[str, float]:
     """
-    Perform basic evaluation on the trained model.
-
+    Evaluates a trained Word2Vec model by analyzing semantic similarities.
+    
+    Performs two types of evaluation on the model:
+    1. Calculates cosine similarity between specific word pairs to test 
+       semantic relationships (like analogies and associations)
+    2. Finds most similar words to example keywords to demonstrate
+       the model's learned semantic space
+       
+    Logs results for inspection and returns similarity scores for further analysis.
+    
     Args:
-        model: Trained Word2Vec model
-        word_pairs: List of word pairs to evaluate similarity
-
+        model: Trained Word2Vec model with loaded word vectors
+        word_pairs: List of word pairs (tuples) to measure similarity between
+        
     Returns:
-        Dictionary of word pair similarities
+        Dictionary mapping word pair keys (format: "word1_word2") to similarity scores
     """
     results = {}
 
@@ -139,13 +209,23 @@ def evaluate_model(model: Word2Vec, word_pairs: List[Tuple[str, str]]) -> Dict[s
 
 def get_model_statistics(model: Word2Vec) -> Dict[str, Any]:
     """
-    Get statistics about a trained Word2Vec model
-
+    Extracts key configuration and size statistics from a trained Word2Vec model.
+    
+    Generates a summary of the model's characteristics including vocabulary size,
+    vector dimensions, training parameters, and algorithm choice. This information
+    is useful for model documentation, comparison between different training runs,
+    and diagnosing training issues.
+    
     Args:
-        model: Trained Word2Vec model
-
+        model: Trained Word2Vec model to analyze
+        
     Returns:
-        Dictionary with model statistics
+        Dictionary containing model statistics with the following keys:
+        - vocabulary_size: Number of unique tokens in the model's vocabulary
+        - vector_size: Dimensionality of the word vectors
+        - window: Context window size used during training
+        - epochs: Number of training iterations performed
+        - algorithm: Either "skip-gram" or "CBOW" depending on training method
     """
     return {
         "vocabulary_size": len(model.wv.key_to_index),

@@ -28,20 +28,18 @@ def convert_amazon_reviews_to_corpus(
     min_length: int = 20  # Minimum review length in characters
 ) -> None:
     """
-    Convert Amazon Reviews dataset from Arrow format to a plain text corpus for Word2Vec training.
-
-    This function:
-    1. Loads the Amazon reviews dataset from the Arrow format
-    2. Filters out reviews shorter than min_length
-    3. Cleans the text (removes newlines, extra spaces)
-    4. Writes each review as a separate "article" with blank lines between them
-    5. Limits the number of reviews if max_reviews is specified
-
+    Converts Arrow-format Amazon Reviews into a plain text corpus with one review per paragraph.
+    
+    Reads reviews from an Arrow dataset, filters by length, cleans text, and writes to a 
+    corpus file with blank lines between entries. The resulting text corpus follows the 
+    format expected by Word2Vec training functions, with each review treated as a separate 
+    "document" for training context boundaries.
+    
     Args:
-        input_path: Path to the Arrow dataset directory
-        output_path: Path to save the text corpus
-        max_reviews: Maximum number of reviews to include (for testing)
-        min_length: Minimum review length in characters
+        input_path: Path to the Arrow dataset directory containing reviews
+        output_path: Path where the plain text corpus will be saved
+        max_reviews: Optional limit on number of reviews to process (useful for testing)
+        min_length: Minimum character length for reviews to be included
     """
     logger.info(f"Loading Amazon Reviews dataset from {input_path}")
 
@@ -92,14 +90,25 @@ def get_review_statistics(
     max_reviews: Optional[int] = None
 ) -> Dict[str, Any]:
     """
-    Get statistics from Amazon reviews dataset
-
+    Generates statistical summaries from an Amazon reviews dataset.
+    
+    Analyzes an Arrow-format dataset to extract key metrics including total 
+    review count, word counts, review length distribution, and rating distribution.
+    Provides an overview of the dataset characteristics for data exploration or
+    model parameter tuning.
+    
     Args:
-        input_path: Path to the Arrow dataset directory
-        max_reviews: Maximum number of reviews to analyze
-
+        input_path: Path to the Arrow dataset directory containing reviews
+        max_reviews: Optional limit on number of reviews to analyze (for efficiency)
+        
     Returns:
-        Dictionary with statistics about the dataset
+        Dictionary containing statistics with the following keys:
+        - total_reviews: Number of reviews analyzed
+        - total_words: Total word count across all reviews
+        - average_review_length: Mean number of words per review
+        - rating_distribution: Count of reviews for each rating (1-5)
+        - min_review_length: Word count of the shortest review
+        - max_review_length: Word count of the longest review
     """
     # Load the dataset
     try:
